@@ -314,7 +314,7 @@ def w_Wikipedias(entity_list, wikilangs="", instanceof='', chunksize=10000, debu
          requested in each request.
          Default value (1500) is a good choice. If parameter wikilangs!="",
          this limit can be increased.
-  :param debug: For debugging purposes (default FALSE). If debug='info'
+  :param debug: For debugging purposes (defauls False). If debug='info'
          information about chunked queries is shown. If debug='query' also the
          query launched is shown.
   :return A Pandas data-frame with five columns: entities, instanceof, npages,
@@ -338,7 +338,7 @@ def w_Wikipedias(entity_list, wikilangs="", instanceof='', chunksize=10000, debu
   n = len(entity_list)
   # Number of entities exceeds chunksize:
   if n > chunksize:
-    if debug!=False:
+    if debug:
       print(f"INFO: The number of entities ({n}) exceeds chunksize ({chunksize}).", sep="", file=sys.stderr)
     return doChunks(w_Wikipedias, entity_list, chunksize, wikilangs=wikilangs,
                     instanceof=instanceof, debug=debug)
@@ -351,7 +351,7 @@ def w_Wikipedias(entity_list, wikilangs="", instanceof='', chunksize=10000, debu
     wikiorder = wikilangs.split('|')
     w_filter = "FILTER(?lang IN ('" + "', '".join(wikiorder) + "'))"
   #
-  # Note the OPTIONAL before VALUES, otherwise we get timeouts.
+  # Note the OPTIONAL before VALUES, otherwise get timeouts
   query = f"""SELECT DISTINCT ?entity
 (GROUP_CONCAT(DISTINCT ?instanc;separator="|") as ?instanceof)
 (COUNT(DISTINCT ?page) as ?npages)
@@ -423,6 +423,9 @@ def w_isValid(entity_list, chunksize=50000, debug=False):
          requests will be made. This is the maximum number of entities
          requested in each request. Please decrease the default value if an
          error occurs.
+  :param debug: For debugging purposes (defauls False). If debug='info'
+         information about chunked queries is shown. If debug='query' also the
+         query launched is shown.
   :return A data-frame with four columns: first, the entity itself, second, if
           that entity is valid in Wikidata (TRUE or FALSE), third, the
           corresponding Wikidata class of which the entities are instances (if
@@ -526,6 +529,9 @@ def w_Property(entity_list, Pproperty, includeQ=False, langsorder='en',
          requests will be made. This is the maximum number of entities
          requested in each request. Please decrease the default value if an
          error occurs.
+  :param debug: For debugging purposes (defauls False). If debug='info'
+         information about chunked queries is shown. If debug='query' also the
+         query launched is shown.
   :return A data-frame with the entity, the entities of the properties and the
           labels in langsorder for them.
   :author Angel Zazo, Department of Computer Science and Automatics, University of Salamanca
@@ -640,6 +646,9 @@ def w_Geoloc(entity_list, langsorder='', chunksize=1000, debug=False):
   :param chunksize: If the number of entities in the database or authorities'
          catalog exceeds this number, then query are made in chunks. Please,
          decrease the default value if an error occurs.
+  :param debug: For debugging purposes (defauls False). If debug='info'
+         information about chunked queries is shown. If debug='query' also the
+         query launched is shown.
   :return A data-frame with 'entity', label, Latitude and Longitude, country
          and label of the country.
   :author Angel Zazo, Department of Computer Science and Automatics, University of Salamanca
@@ -835,8 +844,7 @@ def w_SearchByOccupation(Qoc, mode='entity', langsorder='', wikilangs='',
   :param Qoc: The Wikidata entity of the occupation.
   :param mode: The results you want to obtain:
    - 'entity' returns the Wikidata entities which have the occupation;
-   - 'count' search in WDQS to know the number of Wikidata entities with that
-      occupation;
+   - 'count' returns the number of Wikidata entities with that occupation;
    - 'wikipedias' also the Wikipedia page of the entities are returned.
   :param langsorder: Order of languages in which the information will be
          returned, separated with '|'. If no information is given in the first
@@ -850,6 +858,9 @@ def w_SearchByOccupation(Qoc, mode='entity', langsorder='', wikilangs='',
   :param chunksize: If the number of entities in the database or authorities'
          catalog exceeds this number, then query are made in chunks. Please,
          decrease the default value if error is raised.
+  :param debug: For debugging purposes (defauls False). If debug='info'
+         information about chunked queries is shown. If debug='query' also the
+         query launched is shown.
   :return A data-frame with 'entity', 'entityLabel', 'entityDescription',
           'instanceof' and 'instanceofLabel' columns. Index of the data-frame
           is also set to the list of entities found.
@@ -875,7 +886,7 @@ def w_SearchByOccupation(Qoc, mode='entity', langsorder='', wikilangs='',
   query = 'SELECT (COUNT(DISTINCT ?entity) AS ?count) WHERE {?entity wdt:P106 wd:'+Qoc+'}'
   d = reqWDQS(query, method='GET', format="csv")
   nq = int(d['count'][0])
-  if debug!=False:
+  if debug:
     print(f"INFO: The number of entities with that occupation is {nq}.", file=sys.stderr)
   if mode=='count':
     return(nq)
@@ -933,7 +944,7 @@ WHERE {{
       output = pd.concat([output, d])
      #
   if mode=='wikipedias':
-    if debug!=False:
+    if debug:
       print("INFO: Searching for Wikipedias.", file=sys.stderr)
     w = w_Wikipedias(output.entity, wikilangs=wikilangs, debug=debug)
     output = pd.concat([output, w.iloc[:,2:]], axis=1)
@@ -964,8 +975,8 @@ def w_SearchByIdentifiers(id_list, Pauthority, langsorder='', chunksize=3000, de
          library abbreviations for the databases can be also used in the
          parameter 'Pauthority':
 
-         library  : VIAF, LC,   BNE , ISNI, JPG,  ULAN, BNF,  GND, DNB,
-         Pauthority: P214, P244, P950, P213, P245, P245, P268, P227,P227,
+         library  : VIAF, LC,   BNE , ISNI, JPG,  ULAN, BNF,  GND, DNB,  LCCN
+         Pauthority: P214, P244, P950, P213, P245, P245, P268, P227,P227,P1144
 
          library  : SUDOC, NTA,  J9U,   ELEM,  NUKAT, MNCARS
          Pauthority: P269, P1006, P8189, P1565, P1207, P4439
@@ -977,6 +988,9 @@ def w_SearchByIdentifiers(id_list, Pauthority, langsorder='', chunksize=3000, de
          requests will be made. This is the maximum number of entities
          requested in each request. Please decrease the default value if an
          error occurs.
+  :param debug: For debugging purposes (defauls False). If debug='info'
+         information about chunked queries is shown. If debug='query' also the
+         query launched is shown.
   :return A Pandas data-frame with columns: 'id', 'entity', 'entityLabel',
           'entityDescription', 'instanceof' and 'instanceofLabel'.
   :author Angel Zazo, Department of Computer Science and Automatics, University of Salamanca
@@ -1015,7 +1029,7 @@ def w_SearchByIdentifiers(id_list, Pauthority, langsorder='', chunksize=3000, de
     'RERO':   'P3065',  'CAOONL': 'P8179',  'NII':   'P4787',
     'BIBSYS': 'P1015',  'NORAF' : 'P1015',  'BNC':   'P9984',
     'CANTIC': 'P9984',  'PLWABN': 'P7293',  'NLA' :  'P409',
-    'MNCARS': 'P4439'
+    'MNCARS': 'P4439',  'LCCN'  : 'P1144',
     }
 
   # Obtain de Pauthority if it is an abreviation of the library.
@@ -1077,9 +1091,12 @@ def w_SearchByAuthority(Pauthority, langsorder='', instanceof='', chunksize=1000
   """
   Get all Wikidata entities that have identifiers in the database or
   authorities' catalog indicated in the parameter 'Pauthority'. Returns the
-  Wikidata entities. If parameter 'langsorder'== '', then no labels or
-  descriptions of the entities are returned, otherwise the function returns
-  them in the language order indicated in 'langsorder'.
+  Wikidata entities. If parameter langsorder='', then no labels or descriptions
+  of the entities are returned, otherwise the function returns them in the
+  language order indicated in 'langsorder'. If instanceof!='', then results are
+  filtered to entities that be instanceof Wikidata class(es) in this parameter.
+  If debug='count' function only returns the number of entities without applying
+  filter.
 
   :param Pauthority: Wikidata property identifier of the database or
          authorities' catalog. For example, if Pauthority = "P4439", all
@@ -1088,8 +1105,8 @@ def w_SearchByAuthority(Pauthority, langsorder='', instanceof='', chunksize=1000
          abbreviation for the databases can be also used in the parameter
          'Pauthority':
 
-         library  : VIAF, LC,   BNE , ISNI, JPG,  ULAN, BNF,  GND, DNB,
-         Pauthority: P214, P244, P950, P213, P245, P245, P268, P227,P227,
+         library  : VIAF, LC,   BNE , ISNI, JPG,  ULAN, BNF,  GND, DNB,  LCCN
+         Pauthority: P214, P244, P950, P213, P245, P245, P268, P227,P227,P1144
 
          library  : SUDOC, NTA,  J9U,   ELEM,  NUKAT, MNCARS
          Pauthority: P269, P1006, P8189, P1565, P1207, P4439
@@ -1106,6 +1123,10 @@ def w_SearchByAuthority(Pauthority, langsorder='', instanceof='', chunksize=1000
          catalog exceeds this number, then query are made in chunks. The value
          can increase if langorder=''. Please, decrease the default value if
          error is raised.
+  :param debug: For debugging purposes (defauls False). If debug='info'
+         information about chunked queries is shown. If debug='query' also the
+         query launched is shown. If debug='count' the function only returns
+         the number of entities.
   :return A Pandas data-frame with columns: 'entity', 'entityLabel',
          'entityDescription', 'instanceof', instanceofLabel' and the
          identifier in the "Pauthority" database.
@@ -1141,7 +1162,7 @@ def w_SearchByAuthority(Pauthority, langsorder='', instanceof='', chunksize=1000
     'RERO':   'P3065',  'CAOONL': 'P8179',  'NII':   'P4787',
     'BIBSYS': 'P1015',  'NORAF' : 'P1015',  'BNC':   'P9984',
     'CANTIC': 'P9984',  'PLWABN': 'P7293',  'NLA' :  'P409',
-    'MNCARS': 'P4439'
+    'MNCARS': 'P4439',  'LCCN'  : 'P1144',
     }
   # Obtain de Pauthority if it is an abreviation of the library.
   m = re.match(r'^P\d+$', Pauthority)
@@ -1161,13 +1182,16 @@ def w_SearchByAuthority(Pauthority, langsorder='', instanceof='', chunksize=1000
       ?entity schema:description ?entityDescription.
       ?instanc rdfs:label ?instancLabel.}}"""
   #
-  if instanceof!='' and debug!=False:
+  if debug and instanceof!='':
     print(f"INFO: The instanceof filtering ({instanceof}) will be applied when all entities are retrieved", file=sys.stderr)
     #
   # First: known the number of entities
   query = f"SELECT (COUNT(DISTINCT ?entity) AS ?count) WHERE {{?entity wdt:{Pauthority} [].}}"
   d = reqWDQS(query, method='GET', format="csv")
   nq = int(d['count'][0])
+  #
+  if debug=='count':
+    return nq
   #
   nlim = nq//chunksize
   if nlim>0 and debug:
@@ -1221,7 +1245,8 @@ def w_SearchByInstanceof(instanceof, langsorder='', chunksize=2500, debug=False)
   Get all Wikidata entities which are instance of one o more Wikidata entities
   like films, cities, etc. If parameter `langsorder`='', then no labels or
   descriptions of the entities are returned, otherwise the function returns
-  them in the language order indicated in `langsorder`.
+  them in the language order indicated in `langsorder`. If debug='count' the
+  function only returns the number of entities.
 
   :param instanceof: Wikidata entity of which the entities searched for are an
          example or member of it (class). For example, if instanceof="Q229390"
@@ -1241,7 +1266,7 @@ def w_SearchByInstanceof(instanceof, langsorder='', chunksize=2500, debug=False)
          paramenter exceeds this number, then query are made in chunks. The
          value can increase if langorder=''. Please, reduce the default value
          if error is raised.
-  :param debug: For debugging purposes (default FALSE). If debug='info'
+  :param debug: For debugging purposes (defauls False). If debug='info'
          information about chunked queries is shown. If debug='query' also the
          query launched is shown. If debug='count' the function only returns
          the number of entities.
@@ -1298,20 +1323,20 @@ def w_SearchByInstanceof(instanceof, langsorder='', chunksize=2500, debug=False)
   d = reqWDQS(queryC, method='GET', format="csv")
   nq = int(d['count'][0])
   #
-  if debug!=False:
+  if debug:
     print(f"INFO: The number of entities is {nq}.", file=sys.stderr)
     #
   if debug=='count':
     return(nq)
     #
   nlim = int(nq/chunksize)
-  if nlim>0 and debug!=False:
+  if debug and nlim>0:
     print(f"INFO: The number of entities ({nq}) exceeds chunksize ({chunksize})", file=sys.stderr)
   for k in range(nlim + 1):
     offset = k*chunksize
     if (offset+1) > nq:
       break
-    if nlim>0 and debug!=False:
+    if debug and nlim>0:
       t0 = time()
       print(f"  INFO: Requesting elements from {offset+1} to {min(offset+chunksize, nq)}", end="", file=sys.stderr)
     #
@@ -1335,7 +1360,7 @@ WHERE {{
     d[['entity','instanceof']] = d[['entity','instanceof']].replace(to_replace='http://www.wikidata.org/entity/', value='', regex=True)
     d.index = d.entity.values
     #
-    if nlim>0 and debug!=False:
+    if debug and nlim>0:
       print(f" ({time() - t0:.2f} seconds)", file=sys.stderr )
       #
     if k==0:
@@ -1398,9 +1423,8 @@ def w_SearchByLabel(string, mode='inlabel', langs='', langsorder='', instanceof=
          example or member of it (class). For example, if instanceof='Q5' the
          search are filtered to Wikidata entities of class Q5 (human). Some
          entity classes are allowed, separated with '|'.
-  :param debug For debugging purposes (default FALSE). If debug='query' the
-         query launched is shown. If debug='count' the function only returns
-         the number of entities with that occupation.
+  :param debug: For debugging purposes (defauls False). If debug!=False the
+         query launched is shown.
   :return: A Pandas data-frame with columns: 'entity', 'entityLabel',
          'entityDescription', 'instanceof' and 'instanceofLabel'.
   :author Angel Zazo, Department of Computer Science and Automatics, University of Salamanca
@@ -1586,7 +1610,9 @@ def w_EntityInfo(entity_list, mode='human', langsorder='', wikilangs="",
          using "|" as separator. Wikipedias pages are returned in same order as
          languages in this parameter. If wikilangs='' the function returns
          Wikipedia pages in any language, not sorted.
-  :param debug: For debugging (info or query)
+  :param debug: For debugging purposes (defauls False). If debug='info'
+         information about chunked queries is shown. If debug='query' also the
+         query launched is shown.
   :return: A data-frame with the properties of the entities, also the index
          of the dataframe is set to the list of entities.
   :author Angel Zazo, Department of Computer Science and Automatics, University of Salamanca
@@ -1691,13 +1717,13 @@ def w_EntityInfo(entity_list, mode='human', langsorder='', wikilangs="",
   # Check limits to make chucked queries
   n = len(entity_list)
   for k in range(int(n/chunksize)+1):
-    if n>chunksize and k==0:
+    if debug and n>chunksize and k==0:
       print(f"INFO: The number of entities ({n}) exceeds the MediaWiki API limit ({chunksize}): doing chunked requests.", file=sys.stderr)
     offset = chunksize*k
     t_list = entity_list[offset:offset+chunksize]
     if len(t_list) == 0:
       break
-    if n>chunksize:
+    if debug and n>chunksize :
       print(f" INFO: Getting entities from {offset+1} to {offset+len(t_list)}", file = sys.stderr)
     #
     query = {"format" : 'json',
@@ -1863,7 +1889,7 @@ def w_EntityInfo(entity_list, mode='human', langsorder='', wikilangs="",
 
   # Search places for labels, coords (Latitude and Longitude) and countries
   if len(qidsofplaces) > 0:
-    if debug!=False:
+    if debug:
       print("INFO: Searching labels, latitude and longitude coordinates, and countries for places.", file=sys.stderr)
     places = w_Geoloc(qidsofplaces, langsorder=langsorder, debug=debug)
     # Set the right colnames
@@ -1879,7 +1905,7 @@ def w_EntityInfo(entity_list, mode='human', langsorder='', wikilangs="",
 
   # Search labels for the rest of Qxxx entities
   if len(qidsoflabels) > 0:
-    if debug!=False:
+    if debug:
       print("INFO: Searching labels for Wikidata entities.", file=sys.stderr)
     labels = w_LabelDesc(qidsoflabels, what='L', langsorder=langsorder, debug=debug)
     labels = labels.label.to_dict()
@@ -1972,12 +1998,12 @@ def reqMediaWiki(query, project='en.wikipedia.org', method='GET', attempts=2, de
     #
     response.raise_for_status()
     if debug=="query":
-      print("Quoted:\n", response.url, file=sys.stderr)
-      print("Unquoted:\n", requests.utils.unquote(response.url), file=sys.stderr)
+      print("Quoted URL:\n", response.url, file=sys.stderr)
+      print("Unquoted URL:\n", requests.utils.unquote(response.url), file=sys.stderr)
 
     j = response.json()
     #
-    if debug!=False and 'warnings' in j:
+    if debug and 'warnings' in j:
       for x,y in j['warnings'].items():
         print(f"WARNINGS: {x}: {y['warnings']}")
     if 'error' not in j:
@@ -2106,6 +2132,8 @@ def m_Search(string, mode='title', project='en.wikipedia.org',
          only use "engine_autoselect" option of the "search" action of the API
          (see https://www.mediawiki.org/w/api.php?action=help&modules=query%2Bsearch )
   :param limit: Maximun number of page titles returned.
+  :param debug: For debugging purposes (defauls False). If debug!=False the
+         query launched is shown.
   :return: A data-frame with order (by relevance), page titles, status and
            Wikidata entities found. None if no entities are found.
   :author Angel Zazo, Department of Computer Science and Automatics, University of Salamanca
@@ -2222,7 +2250,9 @@ def m_WikidataEntity(titles, project='en.wikipedia.org', chunksize=MW_LIMIT, deb
   :param project: Wikimedia project, defaults "en.wikipedia.org"
   :param chunksize: If the number of titles exceed chunksize (the limit is 50
          for the MediaWiki API), then query are made in chunks if chunsize.
-  :param debug: For debugging information.
+  :param debug: For debugging purposes (default False). If debug='info'
+         information about chunked queries is shown. If debug='query' also the
+         query launched is shown.
   :return A Pandas data-frame with columns "title", "status", "nomalized", "target"
           and "entity".
   :author Angel Zazo, Department of Computer Science and Automatics, University of Salamanca
@@ -2257,7 +2287,7 @@ def m_WikidataEntity(titles, project='en.wikipedia.org', chunksize=MW_LIMIT, deb
   # Chunked requests?
   n = len(titles)
   if n>chunksize:
-    if debug!=False:
+    if debug:
       print(f"INFO: The number of titles ({n}) exceeds the MediaWiki API limit ({chunksize}): doing chunked requests.", file=sys.stderr)
     return doChunks(m_WikidataEntity, titles, chunksize=MW_LIMIT, project=project, debug=debug)
   ###
@@ -2331,6 +2361,9 @@ def m_Redirects(titles, project="en.wikipedia.org", chunksize=MW_LIMIT, debug=Fa
   :param project: The Wikimedia project, defaults "en.wikipedia.org"
   :param chunksize: If the number of titles exceed chunksize (the limit is 50
          for the MediaWiki API), then query are made in chunks if chunsize.
+  :param debug: For debugging purposes (default False). If debug='info'
+         information about chunked queries is shown. If debug='query' also the
+         query launched is shown.
   :return A dict.
   :author Angel Zazo, Department of Computer Science and Automatics, University of Salamanca
   :examples:
@@ -2342,7 +2375,7 @@ def m_Redirects(titles, project="en.wikipedia.org", chunksize=MW_LIMIT, debug=Fa
   # Chunked requests?
   n = len(titles)
   if n>chunksize:
-    if debug!=False:
+    if debug:
       print(f"INFO: The number of titles ({n}) exceeds the MediaWiki API limit ({chunksize}): doing chunked requests.", file=sys.stderr)
     return doChunks(m_Redirects, titles, chunksize, project=project, debug=debug)
   ###
@@ -2422,7 +2455,10 @@ def m_RedirectsDF(titles, project="en.wikipedia.org", chunksize=MW_LIMIT, debug=
   :param project: The Wikimedia project, defaults "en.wikipedia.org"
   :param chunksize: If the number of titles exceed chunksize (the limit is 50
          for the MediaWiki API), then query are made in chunks if chunsize.
-  :return A dict.
+  :param debug: For debugging purposes (default False). If debug='info'
+         information about chunked queries is shown. If debug='query' also the
+         query launched is shown.
+  :return A pandas Data-frame.
   :author Angel Zazo, Department of Computer Science and Automatics, University of Salamanca
   :example:
   >>> m_Redirects(['Max', 'Eustaquio Celada', 'humanist', 'Cervante'], chunksize=4)
@@ -2433,7 +2469,7 @@ def m_RedirectsDF(titles, project="en.wikipedia.org", chunksize=MW_LIMIT, debug=
   # Chunked requests?
   n = len(titles)
   if n>chunksize:
-    if debug!=False:
+    if debug:
       print(f"INFO: The number of titles ({n}) exceeds the MediaWiki API limit ({chunksize}): doing chunked requests.", file=sys.stderr)
     return doChunks(m_RedirectsDF, titles, chunksize, project=project, debug=debug)
   ###
@@ -2512,8 +2548,10 @@ def m_RedirectsDF(titles, project="en.wikipedia.org", chunksize=MW_LIMIT, debug=
   return output
 
 
-#%% m_PagePrimaryImage(titles, project='en.wikipedia.org', chunksize=MW_LIMIT, debug=False)
-def m_PagePrimaryImage(titles, project='en.wikipedia.org', chunksize=MW_LIMIT, debug=False):
+#%% m_PagePrimaryImage(titles, project='en.wikipedia.org', chunksize=MW_LIMIT,
+#                      debug=False)
+def m_PagePrimaryImage(titles, project='en.wikipedia.org', chunksize=MW_LIMIT,
+                       debug=False):
   """
   Use reqMediaWiki to return the URL of the image associated with the
   Wikipedia pages, if any. Automatically resolves redirects. If a
@@ -2543,6 +2581,9 @@ def m_PagePrimaryImage(titles, project='en.wikipedia.org', chunksize=MW_LIMIT, d
   :param project: Wikimedia project, defaults "en.wikipedia.org"
   :param chunksize: If the number of titles exceed chunksize (the limit is 50
          for the MediaWiki API), then query are made in chunks if chunsize.
+  :param debug: For debugging purposes (default False). If debug='info'
+         information about chunked queries is shown. If debug='query' also the
+         query launched is shown.
   :return A Pandas data-frame with columns "status", "nomalized", "target"
           and "image".
   :author Angel Zazo, Department of Computer Science and Automatics, University of Salamanca
@@ -2578,7 +2619,8 @@ def m_PagePrimaryImage(titles, project='en.wikipedia.org', chunksize=MW_LIMIT, d
   # Chunked requests?
   n = len(titles)
   if n>chunksize:
-    print(f"INFO: The number of titles ({n}) exceeds the MediaWiki API limit ({MW_LIMIT}): doing chunked requests.", file=sys.stderr)
+    if debug:
+      print(f"INFO: The number of titles ({n}) exceeds the MediaWiki API limit ({MW_LIMIT}): doing chunked requests.", file=sys.stderr)
     return doChunks(m_PagePrimaryImage, titles, chunksize, project=project, debug=debug)
   ###
   query = {"format"        : 'json',
@@ -2628,8 +2670,10 @@ def m_PagePrimaryImage(titles, project='en.wikipedia.org', chunksize=MW_LIMIT, d
   return pd.DataFrame.from_dict(output, orient='index')
 
 
-#%% m_PageFiles(titles, project='en.wikipedia.org', chunksize=MW_LIMIT, exclude_ext='svg,webp,xcf', debug=False)
-def m_PageFiles(titles, project='en.wikipedia.org', chunksize=MW_LIMIT, exclude_ext='svg,webp,xcf', debug=False):
+#%% m_PageFiles(titles, project='en.wikipedia.org', chunksize=MW_LIMIT,
+#               exclude_ext='svg,webp,xcf', debug=False)
+def m_PageFiles(titles, project='en.wikipedia.org', chunksize=MW_LIMIT,
+                exclude_ext='svg,webp,xcf', debug=False):
   """
   Search for all URL files in the Wikipedia pages, usually image files. Exclude
   files with extensions in exclude_ext parameter. Also exclude files without
@@ -2671,7 +2715,7 @@ def m_PageFiles(titles, project='en.wikipedia.org', chunksize=MW_LIMIT, exclude_
   # Chunked requests?
   n = len(titles)
   if n>chunksize:
-    if debug!=False:
+    if debug:
       print(f"INFO: The number of titles ({n}) exceeds the MediaWiki API limit ({MW_LIMIT}): doing chunked requests.", file=sys.stderr)
     return doChunks(m_PageFiles, titles, chunksize, project=project,
                        exclude_ext=exclude_ext, debug=debug)
@@ -2769,7 +2813,7 @@ def m_ImageURL(titles, project='en.wikipedia.org', chunksize=MW_LIMIT, debug=Fal
   # Chunked requests?
   n = len(titles)
   if n>chunksize:
-    if debug!=False:
+    if debug:
       print(f"INFO: The number of titles ({n}) exceeds the MediaWiki API limit ({MW_LIMIT}): doing chunked requests.", file=sys.stderr)
     return doChunks(m_ImageURL, titles, chunksize, project=project, debug=debug)
   ###
@@ -2856,7 +2900,7 @@ def m_PageOutLinks(titles, project='en.wikipedia.org', chunksize=MW_LIMIT, debug
   # Chunked requests?
   n = len(titles)
   if n>chunksize:
-    if debug!=False:
+    if debug:
       print(f"INFO: The number of titles ({n}) exceeds the MediaWiki API limit ({MW_LIMIT}): doing chunked requests.", file=sys.stderr)
     return doChunks(m_PageOutLinks, titles, chunksize, project=project, debug=debug)
   ###
@@ -2911,7 +2955,7 @@ def m_PageOutLinks(titles, project='en.wikipedia.org', chunksize=MW_LIMIT, debug
     #
     # continue response
     if 'continue' in j:
-      if debug!=False:
+      if debug:
         print("  INFO: continue response.", file=sys.stderr)
       query.update(j['continue'])
     else:
@@ -2919,8 +2963,10 @@ def m_PageOutLinks(titles, project='en.wikipedia.org', chunksize=MW_LIMIT, debug
   # Finally return de dict output as a Pantad data-frame.
   return pd.DataFrame.from_dict(output, orient='index')
 
-#%% m_PageInLinks(titles, project='en.wikipedia.org', redirects=True, chunksize=MW_LIMIT, debug=False)
-def m_PageInLinks(titles, project='en.wikipedia.org', redirects=True, chunksize=MW_LIMIT, debug=False):
+#%% m_PageInLinks(titles, project='en.wikipedia.org', redirects=True,
+#                 chunksize=MW_LIMIT, debug=False)
+def m_PageInLinks(titles, project='en.wikipedia.org', redirects=True,
+                  chunksize=MW_LIMIT, debug=False):
   """
   Return for each page all incoming links it has from other pages in the
   Wikimedia project (incoming_links). Only in namespace 0. Note that possible
@@ -2960,11 +3006,11 @@ def m_PageInLinks(titles, project='en.wikipedia.org', redirects=True, chunksize=
   #
   # Chunked requests?
   n = len(titles)
-  if debug!=False and redirects:
+  if debug and redirects:
     print(f"INFO: Parameter 'redirects' is True: The number of redirects to all titles in list is: {n}.", file=sys.stderr)
 
   if n>chunksize:
-    if debug!=False:
+    if debug:
       print(f"INFO: The number of titles ({n}) exceeds the MediaWiki API limit ({MW_LIMIT}): doing chunked requests.", file=sys.stderr)
       timeinit = time()
       #
@@ -3007,8 +3053,7 @@ def m_PageInLinks(titles, project='en.wikipedia.org', redirects=True, chunksize=
       outputtarget[title]['nlinks']    = len(linkshere)
       outputtarget[title]['linkshere'] = linkshere
     return pd.DataFrame.from_dict(outputtarget, orient='index')
-
-  # if not n>chunksize
+  #
   query = {"format"        : 'json',
            "formatversion" : '2',
            # "redirects"     : '1',
@@ -3062,7 +3107,7 @@ def m_PageInLinks(titles, project='en.wikipedia.org', redirects=True, chunksize=
     #
     # continue response
     if 'continue' in j:
-      if debug!=False:
+      if debug:
         print("  INFO: continue response.", file=sys.stderr)
       query.update(j['continue'])
     else:
@@ -3097,8 +3142,8 @@ def m_PageInLinks(titles, project='en.wikipedia.org', redirects=True, chunksize=
 #' approach. In this API only one article is allowed in each request.
 
 #%% m_PageViews(article, start, stop, project, access, agent, granularity)
-def m_PageViews(article,           # the title of the article (without "_")
-      start, end,                  # The data of first/last day to inclue (YYYYMMDD or YYYYMMDDHH)
+def m_PageViews(article,           # title of the article (without "_")
+      start, end,                  # first/last day to include (YYYYMMDD or YYYYMMDDHH)
       project = "en.wikipedia.org", # Filter by Wikimedia project
       access  = "all-access",       # Filter by access method: all-access, desktop, mobile-app, mobile-web
       agent   = "all-agents",       # Filter by agent type: all-agents, user, spider, automated
@@ -3130,7 +3175,7 @@ def m_PageViews(article,           # the title of the article (without "_")
          to know the total number of views that page have (including views of
          redirections), it is also necessary set redirects=True, otherwise only
          you have the views of that page.
-  :param debug: For debugging purpouses.
+  :param debug: If True shows the query launched.
   :return A Counter with the number of views by granularity.
   :author Angel Zazo, Department of Computer Science and Automatics, University of Salamanca
   """
@@ -3186,11 +3231,11 @@ def m_PageInfoType(article, infotype="articleinfo", project="en.wikipedia.org",
          of the returned list contains the original page, and the "page"
          element the target page. Also, if infotype='links', the sum of the
          in-links of all redirections is assigned to links_in_count.
-
    NOTE: With "articleinfo" and "links" options the API gives information
        about the page itself, not about the possible page to which it redirects
        (a target page). However, with the "prose" option, information is
        provided on the target page.
+  :param debug: If True shows the query launched.
   :return A dict with the information about the page.
   :author Angel Zazo, Department of Computer Science and Automatics, University of Salamanca
   """
@@ -3262,6 +3307,7 @@ def m_PageInfo(article, project="en.wikipedia.org", redirects=True, debug=False)
   :param redirects: If redirects=True, then the information is obtained
          from the destiny of the page. In that case, for infotype='links, the
          sum of the in-links of all redirections is assigned to links_in_count.
+  :param debug: If True shows the query launched.
   :return A dict with the information about the page.
   :author Angel Zazo, Department of Computer Science and Automatics, University of Salamanca
   """
