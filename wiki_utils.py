@@ -638,6 +638,10 @@ def w_Geoloc(entity_list, langsorder='', chunksize=1000, debug=False):
   this problem, but they are not consistent. In general, this happens very
   seldom, so dropped duplicates can be a good option.
 
+  Note that the Wikidata Action API also get a search to coordinates, but
+  is less efficient. Se this example:
+  See https://www.wikidata.org/w/api.php?action=query&prop=coordinates&titles=Q57860|Q90|Q15695
+
   :param entity_list: Wikidata entity or a list of Wikidata entities.
   :param langsorder: Order of languages in which the information will be
          returned, separated with '|'. If no information is given in the first
@@ -975,11 +979,14 @@ def w_SearchByIdentifiers(id_list, Pauthority, langsorder='', chunksize=3000, de
          library abbreviations for the databases can be also used in the
          parameter 'Pauthority':
 
-         library  : VIAF, LC,   BNE , ISNI, JPG,  ULAN, BNF,  GND, DNB,  LCCN
-         Pauthority: P214, P244, P950, P213, P245, P245, P268, P227,P227,P1144
+        library  :  VIAF, LC,   BNE , ISNI, JPG,  ULAN, BNF,  GND,  DNB,  LCCN
+        Pauthority: P214, P244, P950, P213, P245, P245, P268, P227, P227, P1144
 
-         library  : SUDOC, NTA,  J9U,   ELEM,  NUKAT, MNCARS
-         Pauthority: P269, P1006, P8189, P1565, P1207, P4439
+        library  :  SUDOC, NTA,   J9U,   ELEM,  NUKAT, MNCARS, DIALNET, SCOPUS
+        Pauthority: P269,  P1006, P8189, P1565, P1207, P4439,  P1607,   P1153
+
+        library:    ORCID, PUBLONS, RID,   OCLC
+        Pauthority: P496,  P3829,   P3829, P243
 
   :param langsorder: Order of languages in which the information will be
          returned. If langsorder='', then no labels or descriptions are
@@ -1029,15 +1036,17 @@ def w_SearchByIdentifiers(id_list, Pauthority, langsorder='', chunksize=3000, de
     'RERO':   'P3065',  'CAOONL': 'P8179',  'NII':   'P4787',
     'BIBSYS': 'P1015',  'NORAF' : 'P1015',  'BNC':   'P9984',
     'CANTIC': 'P9984',  'PLWABN': 'P7293',  'NLA' :  'P409',
-    'MNCARS': 'P4439',  'LCCN'  : 'P1144',
+    'MNCARS': 'P4439',  'LCCN'  : 'P1144',  'DIALNET': 'P1607',
+    'SCOPUS': 'P1153',  'ORCID' : 'P496' ,  'PUBLONS': 'P3829',
+    'RID'   : 'P3829',  'OCLC'  : 'P243'
     }
 
   # Obtain de Pauthority if it is an abreviation of the library.
   m = re.match(r'^P\d+$', Pauthority)
   if m is None:
-    if Pauthority not in libraries:
+    if Pauthority.upper() not in libraries:
       raise ValueError(f"Invalid value '{Pauthority}' for parameter 'Pauthority'")
-    Pauthority = libraries[Pauthority]
+    Pauthority = libraries[Pauthority.upper()]
   #
   n = len(id_list)
   # Number of entities exceeds chunksize:
@@ -1105,11 +1114,14 @@ def w_SearchByAuthority(Pauthority, langsorder='', instanceof='', chunksize=1000
          abbreviation for the databases can be also used in the parameter
          'Pauthority':
 
-         library  : VIAF, LC,   BNE , ISNI, JPG,  ULAN, BNF,  GND, DNB,  LCCN
-         Pauthority: P214, P244, P950, P213, P245, P245, P268, P227,P227,P1144
+        library  :  VIAF, LC,   BNE , ISNI, JPG,  ULAN, BNF,  GND,  DNB,  LCCN
+        Pauthority: P214, P244, P950, P213, P245, P245, P268, P227, P227, P1144
 
-         library  : SUDOC, NTA,  J9U,   ELEM,  NUKAT, MNCARS
-         Pauthority: P269, P1006, P8189, P1565, P1207, P4439
+        library  :  SUDOC, NTA,   J9U,   ELEM,  NUKAT, MNCARS, DIALNET, SCOPUS
+        Pauthority: P269,  P1006, P8189, P1565, P1207, P4439,  P1607,   P1153
+
+        library:    ORCID, PUBLONS, RID,   OCLC
+        Pauthority: P496,  P3829,   P3829, P243
 
   :param langsorder: Order of languages in which the information will be
          returned, separated with '|'. If no information is given in the first
@@ -1162,14 +1174,16 @@ def w_SearchByAuthority(Pauthority, langsorder='', instanceof='', chunksize=1000
     'RERO':   'P3065',  'CAOONL': 'P8179',  'NII':   'P4787',
     'BIBSYS': 'P1015',  'NORAF' : 'P1015',  'BNC':   'P9984',
     'CANTIC': 'P9984',  'PLWABN': 'P7293',  'NLA' :  'P409',
-    'MNCARS': 'P4439',  'LCCN'  : 'P1144',
+    'MNCARS': 'P4439',  'LCCN'  : 'P1144',  'DIALNET': 'P1607',
+    'SCOPUS': 'P1153',  'ORCID' : 'P496' ,  'PUBLONS': 'P3829',
+    'RID'   : 'P3829',  'OCLC'  : 'P243'
     }
   # Obtain de Pauthority if it is an abreviation of the library.
   m = re.match(r'^P\d+$', Pauthority)
   if m is None:
-    if Pauthority not in libraries:
+    if Pauthority.upper() not in libraries:
       raise ValueError(f"Invalid value '{Pauthority}' for parameter 'Pauthority'")
-    Pauthority = libraries[Pauthority]
+    Pauthority = libraries[Pauthority.upper()]
   #
   if langsorder == '':
     ss1 = sq = ss2 = ''
